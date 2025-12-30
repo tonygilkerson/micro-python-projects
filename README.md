@@ -15,8 +15,20 @@ A garage door controller
 code --install-extension ms-python.python
 code --install-extension ms-python.vscode-pylance
 code --install-extension paulober.pico-w-go
+```
 
-# MicroPython remote control
+To initialize the project:
+
+* clone this repo
+* right-click at the root in the vs code explorer
+* select **Initialize MicroPico Project**
+* This will add
+  * `.vscode` folder
+  * `.micropico` file
+
+### MicroPython remote control
+
+```sh
 pip3 install mpremote # one-time-task
 
 # Make sure this is in your path and comes before the MacOS installed python
@@ -40,3 +52,13 @@ ls /dev/tty.usb*                  # hopefully there is just one, use it below
 minicom -b 115200 -o -D /dev/tty.usbmodem1101
 ```
 
+## Deploy
+
+```sh
+#mpremote fs cp main.py :main.py
+mpremote fs mkdir /internal
+mpremote fs cp config.py :config.py
+mpremote fs cp internal/bluetooth_scanner.py :internal/bluetooth_scanner.py
+mpremote fs cp internal/__init__.py :/internal/__init__.py
+mpremote reset
+```
