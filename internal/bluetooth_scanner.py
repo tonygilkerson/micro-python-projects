@@ -40,9 +40,11 @@ class BLEScanner:
         Args:
             mode (str): The mode to run the scanner in ('discovery', 'track', or 'track-apple').
             target_mac (str, optional): The MAC address to track in 'track' mode.
+            led_id (str|int): Pin id or name for the LED (e.g. 'LED', 'GP15', 25).
         """
         # Hardware setup: Onboard LED to indicate tracking status
         self.led = Pin(led_id, Pin.OUT)
+        self.led.off()
 
         self.ble = bluetooth.BLE()  # Initialize BLE interface
         self.mode = mode
@@ -81,6 +83,7 @@ class BLEScanner:
                         if self.is_apple_device(parsed):
                             ts = time.ticks_ms()
                             print(f"[{ts}ms] Device: {device_name} | MAC: {addr_str} | RSSI: {rssi}dB | APPLE DEVICE")
+                            self.led.on()  # Indicate device presence with LED
                     if 'services' in parsed:
                         print(f"  Services: {bytes(parsed['services']).hex()}")
 
@@ -122,6 +125,7 @@ class BLEScanner:
                 self.led.off()
 
             await asyncio.sleep_ms(100)  # Short non-blocking delay to avoid excessive CPU usage
+            
 
     def is_apple_device(self, parsed_data):
         """
