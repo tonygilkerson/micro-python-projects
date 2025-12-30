@@ -1,6 +1,7 @@
 from micropython import const
 import bluetooth
 import time
+import asyncio
 from machine import Pin
 
 # Bluetooth Event Constants
@@ -8,7 +9,7 @@ _IRQ_SCAN_RESULT = const(5)  # Event triggered when a BLE device is found during
 _IRQ_SCAN_DONE = const(6)    # Event triggered when scanning stops
 
 # Signal Strength and Timing Thresholds
-VERY_CLOSE_RSSI = const(-40)  # RSSI threshold to filter close devices
+VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
 TIMEOUT_MS = const(500)       # Time (ms) before assuming target device is out of range
 
 
@@ -56,6 +57,12 @@ class BLEScanner:
             event (int): The type of BLE event.
             data (tuple): Data associated with the event.
         """
+        
+        # Why this method is not async:
+        # bt_irq: must be synchronous and IRQ-safe — it's called from the BLE/interrupt context. 
+        # It cannot use await, must not block, must avoid heap allocation, locking or long work. 
+        # If you need heavier work, defer it (e.g. with micropython.schedule() or by setting a preallocated flag) and do the real work in main context.
+
         if event == _IRQ_SCAN_RESULT:
             addr_type, addr, adv_type, rssi, adv_data = data
 
@@ -68,15 +75,14 @@ class BLEScanner:
 
                 if self.mode == "discovery":
                     device_name = parsed.get('name', 'Unknown')
-                    print(f"Device: {device_name} | MAC: {addr_str} | RSSI: {rssi}dB")
+                    
                     if 'manufacturer' in parsed:
                         mfg_hex = parsed['manufacturer'].hex()
-                        print(f"  Manufacturer: {mfg_hex}")
                         if self.is_apple_device(parsed):
-                            print(f"  -> APPLE DEVICE")
+                            ts = time.ticks_ms()
+                            print(f"[{ts}ms] Device: {device_name} | MAC: {addr_str} | RSSI: {rssi}dB | APPLE DEVICE")
                     if 'services' in parsed:
                         print(f"  Services: {bytes(parsed['services']).hex()}")
-                    print()  # Blank line for readability
 
                 elif self.mode == "track" and addr_str == self.target_mac:
                     print(f"Target device found nearby! RSSI: {rssi}dB")
@@ -88,7 +94,7 @@ class BLEScanner:
                     self.led.on()  # Indicate device presence with LED
                     self.last_seen = time.ticks_ms()  # Update last seen time
 
-    def run(self):
+    async def run(self):
         """
         Starts the BLE scanning process in the selected mode.
         Continuously scans for BLE devices and processes results based on mode.
@@ -115,7 +121,7 @@ class BLEScanner:
             if self.mode == "track" and time.ticks_diff(time.ticks_ms(), self.last_seen) > TIMEOUT_MS:
                 self.led.off()
 
-            time.sleep_ms(100)  # Short delay to avoid excessive CPU usage and allow other operations
+            await asyncio.sleep_ms(100)  # Short non-blocking delay to avoid excessive CPU usage
 
     def is_apple_device(self, parsed_data):
         """
@@ -128,6 +134,11 @@ class BLEScanner:
         Returns:
             bool: True if this is an Apple device, False otherwise.
         """
+        # Why this method is not async:
+        #
+        # is_apple_device: a tiny, immediate boolean check (pure computation). Making it async would only add overhead 
+        # and require await at each call site for no benefit.
+
         if 'manufacturer' in parsed_data:
             mfg_data = parsed_data['manufacturer']
             # Check if manufacturer data starts with Apple's company ID (0x004C)
@@ -141,6 +152,13 @@ class BLEScanner:
         Parse BLE advertising data to extract useful information.
         Returns: dict with 'name', 'manufacturer', 'services', etc.
         """
+        ## Why this method is not async:
+        #
+        # parse_adv_data: pure CPU-bound parsing. It doesn't need to yield to the event loop, so 
+        # keeping it def avoids coroutine overhead and extra allocations. 
+        #
+        # Also it's called from bt_irq (or from a scheduled handler) so making it async would not help,
+        # you'd still need to call it synchronously in the IRQ-deferred handler.
         result = {}
         i = 0
         while i < len(adv_data):
