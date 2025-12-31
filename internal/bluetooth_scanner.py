@@ -9,8 +9,9 @@ _IRQ_SCAN_RESULT = const(5)  # Event triggered when a BLE device is found during
 _IRQ_SCAN_DONE = const(6)    # Event triggered when scanning stops
 
 # Signal Strength and Timing Thresholds
-VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
-TIMEOUT_MS = const(500)       # Time (ms) before assuming target device is out of range
+# VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
+VERY_CLOSE_RSSI = const(-40)  # RSSI threshold to filter close devices
+TIMEOUT_MS = const(5000)      # Time (ms) before assuming target device is out of range
 
 
 class BLEScanner:
@@ -23,7 +24,7 @@ class BLEScanner:
     - 'track-apple' mode: Tracks any Apple device in close proximity (ignores MAC randomization).
 
     Attributes:
-        mode (str): The scanning mode, either 'discovery', 'track', or 'track-apple'.
+        mode (str): The scanning mode, either 'discovery', 'track'.
         target_mac (str, optional): The MAC address of the target device in 'track' mode.
         last_seen (int): Timestamp of when the target device was last detected.
         led (str): Tracking LED to indicate device presence. ex, LED, GP15 etc.
@@ -50,6 +51,7 @@ class BLEScanner:
         self.mode = mode
         self.target_mac = target_mac
         self.last_seen = 0  # Track last detection time for tracking mode
+        self.tracking = False # Currently not tracking a device
 
     def bt_irq(self, event, data):
         """
@@ -83,20 +85,23 @@ class BLEScanner:
                         if self.is_apple_device(parsed):
                             ts = time.ticks_ms()
                             print(f"[{ts}ms] Device: {device_name} | MAC: {addr_str} | RSSI: {rssi}dB | APPLE DEVICE")
-                            self.led.on()  # Indicate device presence with LED
                     if 'services' in parsed:
                         print(f"  Services: {bytes(parsed['services']).hex()}")
-
-                elif self.mode == "track" and addr_str == self.target_mac:
-                    print(f"Target device found nearby! RSSI: {rssi}dB")
-                    self.led.on()  # Indicate device presence with LED
-                    self.last_seen = time.ticks_ms()  # Update last seen time
                 
-                elif self.mode == "track-apple" and self.is_apple_device(parsed):
-                    print(f"Apple device nearby! MAC: {addr_str} | RSSI: {rssi}dB")
-                    self.led.on()  # Indicate device presence with LED
-                    self.last_seen = time.ticks_ms()  # Update last seen time
+                elif self.mode == "track" and self.is_apple_device(parsed):
+                    print(f"Start tracking, Apple device nearby! | MAC: {addr_str} | RSSI: {rssi}dB")
+                    self.set_tracking(True)
 
+    def set_tracking(self, is_tracking: bool):
+        self.tracking = is_tracking
+
+        if is_tracking:
+          self.led.on()  # Indicate device presence with LED
+          self.last_seen = time.ticks_ms()  # Update last seen time
+        else:
+          self.led.off() 
+
+          
     async def run(self):
         """
         Starts the BLE scanning process in the selected mode.
@@ -122,10 +127,11 @@ class BLEScanner:
             self.ble.gap_scan(1000, 30000, 30000, True)
 
             if self.mode == "track" and time.ticks_diff(time.ticks_ms(), self.last_seen) > TIMEOUT_MS:
-                self.led.off()
+                self.set_tracking(False)
 
             await asyncio.sleep_ms(100)  # Short non-blocking delay to avoid excessive CPU usage
-            
+
+
 
     def is_apple_device(self, parsed_data):
         """
