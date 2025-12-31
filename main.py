@@ -17,7 +17,6 @@ async def main():
      cover_btn_id="GP16",
      cover_led_id="GP15",
      scanner=scanner)
-  asyncio.create_task(cover.run())
   
   # Run forever
   while True:

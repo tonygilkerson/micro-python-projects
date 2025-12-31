@@ -1,6 +1,8 @@
 import asyncio
 from machine import Pin
 from internal.bluetooth_scanner import BLEScanner
+import micropython
+import time
 
 cover_btn: Pin
 cover_led: Pin
@@ -30,46 +32,45 @@ class CoverCtl:
             cover_btn_id(int): The pin ID to use for the cover button. Is used to open/close the cover.
             cover_led_id(int): The pin ID to use for the cover LED. Is used to indicate if the cover is open or closed.
         """
-        # 
-        # Cover LED
-        #
-        self.cover_led = Pin(cover_led_id, Pin.OUT)
-        self.cover_led.off()
-        
-        #
-        # Cover Button
-        #
-        self.cover_btn = Pin(cover_btn_id, Pin.IN, Pin.PULL_UP)
 
-        #
-        # Bluetooth Scanner
-        #
+        # Scanner
         self.scanner = scanner
 
-    async def run(self) -> None:
-        """Monitor button that controls the cover"""
-        while True:
-            if self.cover_btn.value() == 0:  # Button pressed (assuming pull-up, pressed = LOW)
-                print("Button Press!")
-                
-                if self.cover_led.value() == 1:
-                    self.cover_led.value(0)
-                    print("Close cover (Turn off led)")
-                
-                elif self.cover_led.value() == 0 and self.scanner.tracking:
-                    self.cover_led.value(1)
-                    print("Open cover (Turn on LED)")
+        # Cover LED
+        self.cover_led = Pin(cover_led_id, Pin.OUT)
+        self.cover_led.off()
 
-                elif self.cover_led.value() == 0 and not self.scanner.tracking:
-                    print("Cant open when no device in range!")
-                
-                else:
-                    print("no op")
+        # Cover Button
+        self.cover_btn = Pin(cover_btn_id, Pin.IN, Pin.PULL_UP)
+        self._cover_btn_last_press_ms = 0
+        self.cover_btn.irq(handler=self.cover_irq, trigger=Pin.IRQ_FALLING)
 
-                # Debounce - wait for button release
-                while self.cover_btn.value() == 0:
-                    await asyncio.sleep_ms(10)
-                # Wait a bit after release to debounce
-                await asyncio.sleep_ms(50)
+    def cover_irq(self, pin):
+        """IRQ-safe handler: schedule main-context work"""
+        # pass small int (pin id) to scheduled handler
+        micropython.schedule(self.cover_btn_handler, "msg-not-used")
 
-            await asyncio.sleep_ms(10)  # Check every 10ms
+    def cover_btn_handler(self, arg):
+        """Cover Button Handler. Runs when the cover button is pressed
+        Runs in main context via micropython.schedule"""
+        now = time.ticks_ms()
+        # simple debounce: ignore presses within 300ms
+        if time.ticks_diff(now, self._cover_btn_last_press_ms) < 300:
+            return
+        self._cover_btn_last_press_ms = now
+
+        print(f"Button pressed! Got message {arg}")
+
+        if self.cover_led.value() == 1:
+            self.cover_led.value(0)
+            print("Close cover (Turn off led)")
+        
+        elif self.cover_led.value() == 0 and self.scanner.tracking:
+            self.cover_led.value(1)
+            print("Open cover (Turn on LED)")
+
+        elif self.cover_led.value() == 0 and not self.scanner.tracking:
+            print("Cant open when no device in range!")
+        
+        else:
+            print("no op")
