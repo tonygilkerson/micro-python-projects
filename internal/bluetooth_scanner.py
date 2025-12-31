@@ -9,8 +9,7 @@ _IRQ_SCAN_RESULT = const(5)  # Event triggered when a BLE device is found during
 _IRQ_SCAN_DONE = const(6)    # Event triggered when scanning stops
 
 # Signal Strength and Timing Thresholds
-# VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
-VERY_CLOSE_RSSI = const(-40)  # RSSI threshold to filter close devices
+VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
 TIMEOUT_MS = const(5000)      # Time (ms) before assuming target device is out of range
 
 
@@ -25,22 +24,23 @@ class BLEScanner:
 
     Attributes:
         mode (str): The scanning mode, either 'discovery', 'track'.
-        target_mac (str, optional): The MAC address of the target device in 'track' mode.
-        last_seen (int): Timestamp of when the target device was last detected.
         led (str): Tracking LED to indicate device presence. ex, LED, GP15 etc.
+        last_seen (int): Timestamp of when the target device was last detected.
+        tracking (bool): True when an Apple device is in range.
     """
 
-    def __init__(
-            self, 
-            mode="discovery", 
-            target_mac=None,
-            led_id="LED"):
+    mode: str
+    led: Pin
+    ble: bluetooth.BLE
+    last_seen: int
+    tracking: bool
+
+    def __init__(self, mode: str = "discovery", led_id: str = "LED") -> None:
         """
         Initializes the BLE scanner.
 
         Args:
             mode (str): The mode to run the scanner in ('discovery', 'track', or 'track-apple').
-            target_mac (str, optional): The MAC address to track in 'track' mode.
             led_id (str|int): Pin id or name for the LED (e.g. 'LED', 'GP15', 25).
         """
         # Hardware setup: Onboard LED to indicate tracking status
@@ -49,8 +49,7 @@ class BLEScanner:
 
         self.ble = bluetooth.BLE()  # Initialize BLE interface
         self.mode = mode
-        self.target_mac = target_mac
-        self.last_seen = 0  # Track last detection time for tracking mode
+        self.last_seen = 0
         self.tracking = False # Currently not tracking a device
 
     def bt_irq(self, event, data):
