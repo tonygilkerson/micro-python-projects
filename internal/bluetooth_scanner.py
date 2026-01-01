@@ -9,7 +9,8 @@ _IRQ_SCAN_RESULT = const(5)  # Event triggered when a BLE device is found during
 _IRQ_SCAN_DONE = const(6)    # Event triggered when scanning stops
 
 # Signal Strength and Timing Thresholds
-VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
+# VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
+VERY_CLOSE_RSSI = const(-35)  # RSSI threshold to filter close devices
 TIMEOUT_MS = const(5000)      # Time (ms) before assuming target device is out of range
 
 
@@ -98,9 +99,9 @@ class BLEScanner:
           self.led.on()  # Indicate device presence with LED
           self.last_seen = time.ticks_ms()  # Update last seen time
         else:
-          self.led.off() 
+          self.led.off()
+          self.last_seen = 0
 
-          
     async def run(self):
         """
         Starts the BLE scanning process in the selected mode.

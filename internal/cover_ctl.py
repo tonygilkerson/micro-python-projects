@@ -7,6 +7,7 @@ import time
 cover_btn: Pin
 cover_led: Pin
 scanner: BLEScanner
+_cover_btn_last_press_ms: int
 
 class CoverCtl:
     """
@@ -59,7 +60,7 @@ class CoverCtl:
             return
         self._cover_btn_last_press_ms = now
 
-        print(f"Button pressed! Got message {arg}")
+        print(f"Button pressed! BEFORE, is scan: {self.scanner.tracking}, is open: {self.cover_led.value()}")
 
         if self.cover_led.value() == 1:
             self.cover_led.value(0)
@@ -74,3 +75,5 @@ class CoverCtl:
         
         else:
             print("no op")
+        print(f"Button pressed! AFTER,  is scan: {self.scanner.tracking}, is open: {self.cover_led.value()}")
+        print("-------------------------------------------------------------------------------")

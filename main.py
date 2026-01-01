@@ -9,7 +9,7 @@ from internal.cover_ctl import CoverCtl
 async def main():
  
   # Scanner
-  scanner = BLEScanner(mode="track", led_id="LED")
+  scanner = BLEScanner(mode="track", led_id="GP14")
   asyncio.create_task(scanner.run())
 
   # Cover Control
