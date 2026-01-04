@@ -1,13 +1,9 @@
 import asyncio
 from machine import Pin
 from internal.bluetooth_scanner import BLEScanner
+from internal.logging import Logger
 import micropython
 import time
-
-cover_btn: Pin
-cover_led: Pin
-scanner: BLEScanner
-_cover_btn_last_press_ms: int
 
 class CoverCtl:
     """
@@ -20,8 +16,15 @@ class CoverCtl:
         foo (str): todo foo
         bar (str): todo bar
     """
+    logger: Logger
+    cover_btn: Pin
+    cover_led: Pin
+    scanner: BLEScanner
+    _cover_btn_last_press_ms: int
 
-    def __init__(self, 
+
+    def __init__(self,
+                 logger: Logger,
                  scanner: BLEScanner,
                  cover_btn_id: str = "GP16",
                  cover_led_id: str = "GP15",
@@ -33,6 +36,8 @@ class CoverCtl:
             cover_btn_id(int): The pin ID to use for the cover button. Is used to open/close the cover.
             cover_led_id(int): The pin ID to use for the cover LED. Is used to indicate if the cover is open or closed.
         """
+        # Logger
+        self.logger = logger
 
         # Scanner
         self.scanner = scanner
@@ -60,20 +65,19 @@ class CoverCtl:
             return
         self._cover_btn_last_press_ms = now
 
-        print(f"Button pressed! BEFORE, is scan: {self.scanner.tracking}, is open: {self.cover_led.value()}")
+        self.logger.info("CoverCtl.cover_btn_handler",f"Button pressed!, is scan: {self.scanner.tracking}, is open: {self.cover_led.value()}")
 
         if self.cover_led.value() == 1:
             self.cover_led.value(0)
-            print("Close cover (Turn off led)")
+            self.logger.info("CoverCtl.cover_btn_handler","Close cover (Turn off led)")
         
         elif self.cover_led.value() == 0 and self.scanner.tracking:
             self.cover_led.value(1)
-            print("Open cover (Turn on LED)")
+            self.logger.info("CoverCtl.cover_btn_handler","Open cover (Turn on LED)")
 
         elif self.cover_led.value() == 0 and not self.scanner.tracking:
-            print("Cant open when no device in range!")
+            self.logger.info("CoverCtl.cover_btn_handler","Cant open when no device in range!")
         
         else:
-            print("no op")
-        print(f"Button pressed! AFTER,  is scan: {self.scanner.tracking}, is open: {self.cover_led.value()}")
-        print("-------------------------------------------------------------------------------")
+            self.logger.info("CoverCtl.cover_btn_handler","no op")
+        self.logger.info("CoverCtl.cover_btn_handler","-------------------------------------------------------------------------------")

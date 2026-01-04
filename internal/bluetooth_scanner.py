@@ -3,6 +3,7 @@ import bluetooth
 import time
 import asyncio
 from machine import Pin
+from internal.logging import Logger
 
 # Bluetooth Event Constants
 _IRQ_SCAN_RESULT = const(5)  # Event triggered when a BLE device is found during scanning
@@ -30,13 +31,17 @@ class BLEScanner:
         tracking (bool): True when an Apple device is in range.
     """
 
+    logger: Logger
     mode: str
     led: Pin
     ble: bluetooth.BLE
     last_seen: int
     tracking: bool
 
-    def __init__(self, mode: str = "discovery", led_id: str = "LED") -> None:
+    def __init__(self,
+                 logger: Logger,
+                 mode: str = "discovery", 
+                 led_id: str = "LED") -> None:
         """
         Initializes the BLE scanner.
 
@@ -44,6 +49,9 @@ class BLEScanner:
             mode (str): The mode to run the scanner in ('discovery', 'track', or 'track-apple').
             led_id (str|int): Pin id or name for the LED (e.g. 'LED', 'GP15', 25).
         """
+        # Logger
+        self.logger = logger
+
         # Hardware setup: Onboard LED to indicate tracking status
         self.led = Pin(led_id, Pin.OUT)
         self.led.off()
@@ -84,12 +92,12 @@ class BLEScanner:
                         mfg_hex = parsed['manufacturer'].hex()
                         if self.is_apple_device(parsed):
                             ts = time.ticks_ms()
-                            print(f"[{ts}ms] Device: {device_name} | MAC: {addr_str} | RSSI: {rssi}dB | APPLE DEVICE")
+                            self.logger.info("BLEScanner.bt_irq",f"[{ts}ms] Device: {device_name} | MAC: {addr_str} | RSSI: {rssi}dB | APPLE DEVICE")
                     if 'services' in parsed:
-                        print(f"  Services: {bytes(parsed['services']).hex()}")
+                        self.logger.info("BLEScanner.bt_irq",f"  Services: {bytes(parsed['services']).hex()}")
                 
                 elif self.mode == "track" and self.is_apple_device(parsed):
-                    print(f"Start tracking, Apple device nearby! | MAC: {addr_str} | RSSI: {rssi}dB")
+                    self.logger.info("BLEScanner.bt_irq",f"Start tracking, Apple device nearby! | MAC: {addr_str} | RSSI: {rssi}dB")
                     self.set_tracking(True)
 
     def set_tracking(self, is_tracking: bool):
@@ -120,7 +128,7 @@ class BLEScanner:
         """
         self.ble.active(True)
         self.ble.irq(self.bt_irq)
-        print(f"Scanning for BLE devices in {self.mode} mode...")
+        self.logger.info("BLEScanner.run",f"Scanning for BLE devices in {self.mode} mode...")
 
         while True:
             # gap_scan is non-blocking on Pico W (events arrive via bt_irq)
