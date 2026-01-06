@@ -20,6 +20,7 @@ async def main():
   logger.info("main","Create scanner")
   scanner = BLEScanner(
      logger=logger,
+     tracking_handler=temp_handler,
      mode="track",
      led_id="GP12")
   asyncio.create_task(scanner.run())
@@ -36,6 +37,9 @@ async def main():
   while True:
       logger.debug("main",".")
       await asyncio.sleep_ms(1000)
+
+def temp_handler():
+   print("THIS IS A TEST")
 
 # Run it
 asyncio.run(main())

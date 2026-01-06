@@ -37,15 +37,20 @@ class BLEScanner:
     ble: bluetooth.BLE
     last_seen: int
     tracking: bool
+    tracking_handler: None
 
     def __init__(self,
                  logger: Logger,
-                 mode: str = "discovery", 
-                 led_id: str = "LED") -> None:
+                 tracking_handler: None,
+                 mode: str = "discovery",
+                 led_id: str = "LED",
+                 ) -> None:
         """
         Initializes the BLE scanner.
 
         Args:
+            logger (Logger): Class for handling logging
+            tracking_handler (function): Handler to call when tracking starts
             mode (str): The mode to run the scanner in ('discovery', 'track', or 'track-apple').
             led_id (str|int): Pin id or name for the LED (e.g. 'LED', 'GP15', 25).
         """
@@ -60,6 +65,7 @@ class BLEScanner:
         self.mode = mode
         self.last_seen = 0
         self.tracking = False # Currently not tracking a device
+        self.tracking_handler = tracking_handler
 
     def bt_irq(self, event, data):
         """
@@ -100,10 +106,19 @@ class BLEScanner:
                     self.logger.info("BLEScanner.bt_irq",f"Start tracking, Apple device nearby! | MAC: {addr_str} | RSSI: {rssi}dB")
                     self.set_tracking(True)
 
-    def set_tracking(self, is_tracking: bool):
-        self.tracking = is_tracking
+    def set_tracking(self, tracking_state: bool):
+        
+        # Check if this it the start of tracking
+        if not self.tracking and tracking_state:
+            self.logger.info("BLEScanner.set_tracking","Start tracking, TODO call handler")
+            if callable(self.tracking_handler):
+              self.tracking_handler()
 
-        if is_tracking:
+        # Set tracking state
+        self.tracking = tracking_state
+
+        if tracking_state:
+          # DEVTODO this might change when i add the handler, I will prob turn on/off LEDs in handler
           self.led.on()  # Indicate device presence with LED
           self.last_seen = time.ticks_ms()  # Update last seen time
         else:
@@ -138,7 +153,6 @@ class BLEScanner:
                 self.set_tracking(False)
 
             await asyncio.sleep_ms(100)  # Short non-blocking delay to avoid excessive CPU usage
-
 
 
     def is_apple_device(self, parsed_data):
