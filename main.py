@@ -15,11 +15,13 @@ async def main():
   logger.info("main","Start")
 
   # Scanner
+  # DEVTODO I need to update the scanner accept a call-back function, the call back function is the same function that 
+  #         is called when you press the od_cover_button.
   logger.info("main","Create scanner")
   scanner = BLEScanner(
      logger=logger,
      mode="track",
-     led_id="GP14")
+     led_id="GP12")
   asyncio.create_task(scanner.run())
 
   # Cover Control

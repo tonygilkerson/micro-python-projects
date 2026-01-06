@@ -1,10 +1,4 @@
-"""Minimal console logger compatible with MicroPython (RPi Pico).
-
-This logger removes stack inspection and complex datetime usage so it
-can run on constrained MicroPython builds. It prints a simple timestamp,
-level, and message. Keep the API small: `Logger` with `debug`, `info`,
-`error`, and `set_level`.
-"""
+"""Minimal console logger compatible with MicroPython (RPi Pico)."""
 
 import time
 
@@ -22,23 +16,23 @@ class Logger:
 	def set_level(self, level: int) -> None:
 		self.level = level
 
-	def debug(self, source, msg, *args, **kwargs) -> None:
-		self._log(self.DEBUG, source, msg, *args, **kwargs)
+	def debug(self, source, msg) -> None:
+		self._log(self.DEBUG, source, msg)
 
-	def info(self, source, msg, *args, **kwargs) -> None:
-		self._log(self.INFO, source, msg, *args, **kwargs)
+	def info(self, source, msg) -> None:
+		self._log(self.INFO, source, msg)
 
-	def error(self, source, msg, *args, **kwargs) -> None:
-		self._log(self.ERROR, source, msg, *args, **kwargs)
+	def error(self, source, msg) -> None:
+		self._log(self.ERROR, source, msg)
 
-	def _log(self, level: int, source, msg, *args, **kwargs) -> None:
+	def _log(self, level: int, source, msg) -> None:
 		if level < self.level:
 			return
 
 		try:
-			message = msg.format(*args, **kwargs) if (args or kwargs) and isinstance(msg, str) else str(msg)
-		except Exception:
 			message = str(msg)
+		except Exception:
+			message = ""
 
 		# Build a simple timestamp. Use time.localtime when available and
 		# get milliseconds from ticks_ms if present. Fall back to time.time.

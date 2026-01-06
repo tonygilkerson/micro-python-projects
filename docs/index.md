@@ -54,7 +54,6 @@ Functions
   * If open, call closeCover()
   * If closed, call openCover()
 
-
 ## Wiring
 
 * [wiring layout](wiring.md)
