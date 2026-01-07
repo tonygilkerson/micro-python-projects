@@ -5,6 +5,11 @@ import asyncio
 from machine import Pin
 from internal.logging import Logger
 
+# MicroPython does not have typing; provide a tiny fallback so annotations don't error in editors
+Callable = object
+Optional = object
+Any = object
+
 # Bluetooth Event Constants
 _IRQ_SCAN_RESULT = const(5)  # Event triggered when a BLE device is found during scanning
 _IRQ_SCAN_DONE = const(6)    # Event triggered when scanning stops
@@ -37,11 +42,12 @@ class BLEScanner:
     ble: bluetooth.BLE
     last_seen: int
     tracking: bool
-    tracking_handler: None
+    # tracking_handler: Optional[Callable[..., Any]]
+    tracking_handler: Callable
 
     def __init__(self,
                  logger: Logger,
-                 tracking_handler: None,
+                 tracking_handler: Callable = None,
                  mode: str = "discovery",
                  led_id: str = "LED",
                  ) -> None:

@@ -56,7 +56,7 @@ class Logger:
 		src = str(source)
 		print("[{}] {} {} - {}".format(ts, level_name, src, message))
 
-
+# DEVTODO I dont think i need a function to create the class instance
 def get_logger(level: int = Logger.INFO) -> Logger:
 	return Logger(level=level)
 
