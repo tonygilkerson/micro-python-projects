@@ -2,36 +2,57 @@
 import network
 import urequests
 import time
-from machine import Pin
+from machine import Pin, PWM
+from internal.logging import Logger
 from config import WIFI_SSID, WIFI_PASSWORD, HA_URL, HA_TOKEN
 
 class HAClient:
   """Home Assistant Client"""
-    
+  led: Pin
+  pwm: PWM
+
+  def __init__(self,
+             logger: Logger,
+             led_id: str = "LED",
+             ) -> None:
+      # Logger
+      self.logger = logger
+
+      # WiFi connection led
+      self.led = Pin(led_id, Pin.OUT)
+      self.led.off()
+
+      # Start off with blinking led
+      pwm = PWM(Pin(led_id))
+      pwm.freq(10)           # 1 Hz => 1000 ms period
+      pwm.duty_u16(32768)    # ~50% duty (0..65535)
+      self.pwm = pwm
+
   def connect_wifi(self) -> bool:
       """Connect to WiFi network"""
       wlan = network.WLAN(network.STA_IF)
       wlan.active(True)
       
       if not wlan.isconnected():
-          print("Connecting to WiFi...")
+          self.logger.info("HAClient.connect_wifi","Connecting to WiFi...")
           wlan.connect(WIFI_SSID, WIFI_PASSWORD)
           
           timeout = 10
           while not wlan.isconnected() and timeout > 0:
-              print(".", end="")
               time.sleep(1)
               timeout -= 1
           
           if wlan.isconnected():
-              print(f"\n✓ WiFi connected!")
-              print(f"IP Address: {wlan.ifconfig()[0]}")
+              self.logger.info("HAClient.connect_wifi","✓ WiFi connected!")
+              self.logger.info("HAClient.connect_wifi",f"IP Address: {wlan.ifconfig()[0]}")
+              self.pwm.duty_u16(65535) # Stop
               return True
           else:
-              print("\n✗ WiFi connection failed")
+              self.logger.info("HAClient.connect_wifi","✗ WiFi connection failed")
               return False
       else:
-          print(f"✓ Already connected: {wlan.ifconfig()[0]}")
+          self.logger.info("HAClient.connect_wifi",f"✓ Already connected: {wlan.ifconfig()[0]}")
+          self.pwm.duty_u16(65535) # Stop
           return True
 
   def get_state(self, entity_id):

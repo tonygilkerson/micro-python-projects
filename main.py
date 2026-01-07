@@ -1,9 +1,12 @@
 import asyncio
-from machine import Pin, PWM
+import machine
+import time
+from machine import Pin
 from internal.bluetooth_scanner import BLEScanner
 from internal.logging import get_logger, Logger
 from internal.cover_ctl import CoverCtl
 from internal.ha_api import HAClient
+
 
 #
 # main
@@ -15,21 +18,12 @@ async def main():
   logger.set_level(Logger.INFO)
   logger.info("main","Start")
 
-  pwm = PWM(Pin("GP14"))        # or Pin(25) on some boards
-  pwm.freq(10)                  # 1 Hz => 1000 ms period
-  pwm.duty_u16(32768)          # ~50% duty (0..65535)
-
- 
   # Connect to WiFi
-  logger.info("main","Connect to WiFi...")
-  ha = HAClient()
-  if ha.connect_wifi():
-     pwm.duty_u16(65535)
-     logger.info("main","WiFi connected!")
+  ha = HAClient(logger=logger,led_id="GP14")
+  while not ha.connect_wifi():
+     logger.info("main","WiFi not connected!")
+  logger.info("main","WiFi connected!")
 
-
-  logger.info("main","ZZZzzz...")
-  await asyncio.sleep_ms(10000)
 
   # Scanner
   # DEVTODO I need to update the scanner accept a call-back function, the call back function is the same function that 
