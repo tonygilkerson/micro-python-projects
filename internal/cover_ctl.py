@@ -26,8 +26,8 @@ class CoverCtl:
     def __init__(self,
                  logger: Logger,
                  scanner: BLEScanner,
-                 cover_btn_id: str = "GP16",
-                 cover_led_id: str = "GP15",
+                 cover_btn_id: str,
+                 cover_led_id: str,
                  ) -> None:
         """
         Initializes the cover controller
