@@ -15,8 +15,9 @@ import internal.util as util
 CVR_OPEN_LED_ID: str = "GP11"
 TRACKING_LED_ID: str = "GP12"
 LOCK_LED_ID: str     = "GP13"
-ID_CVR_LED_ID: str   = "GP14"
+RUN_LED_ID: str      = "GP14"
 OD_CVR_LED_ID: str   = "GP15"
+
 OD_CVR_BTN_ID: str   = "GP16"
 ID_CVR_BTN_ID: str   = "GP17"
 LOCK_BTN_ID: str     = "GP18"
@@ -26,23 +27,30 @@ LOCK_BTN_ID: str     = "GP18"
 #
 async def main():
  
+  # Outs
+  cvr_open_led = Pin(CVR_OPEN_LED_ID, Pin.OUT)
+  tracking_led = Pin(TRACKING_LED_ID, Pin.OUT)
+  lock_led = Pin(LOCK_LED_ID, Pin.OUT)
+  run_led = Pin(RUN_LED_ID, Pin.OUT)
+  od_cvr_led = Pin(OD_CVR_LED_ID, Pin.OUT)
+
   # Logger
   logger = get_logger()
   logger.set_level(Logger.INFO)
   logger.info("main","Start")
 
   # Create HA Client
-  ha_client = HAClient(logger=logger,led_id=ID_CVR_LED_ID)
+  ha_client = HAClient(logger=logger)
 
   # Startup
   util.startup(
      logger=logger,
      ha_client=ha_client,
-     cvr_open_led_id=CVR_OPEN_LED_ID,
-     tracking_led_id=TRACKING_LED_ID,
-     lock_led_id=LOCK_LED_ID,
-     id_cvr_led_id=ID_CVR_LED_ID,
-     od_cvr_led_id=OD_CVR_LED_ID
+     cvr_open_led=cvr_open_led,
+     tracking_led=tracking_led,
+     lock_led=lock_led,
+     run_led=run_led,
+     od_cvr_led=od_cvr_led
      )
 
   # Scanner

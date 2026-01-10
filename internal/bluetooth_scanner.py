@@ -149,7 +149,7 @@ class BLEScanner:
         """
         self.ble.active(True)
         self.ble.irq(self.bt_irq)
-        self.logger.info("BLEScanner.run",f"Scanning for BLE devices in {self.mode} mode...")
+        self.logger.info("BLEScanner.run",f"📡 Scanning for BLE devices in {self.mode} mode...")
 
         while True:
             # gap_scan is non-blocking on Pico W (events arrive via bt_irq)

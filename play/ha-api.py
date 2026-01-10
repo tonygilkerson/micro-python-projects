@@ -48,6 +48,7 @@ def connect_wifi():
 # Home Assistant API Functions
 # ============================================
 
+
 def get_ha_state(entity_id):
     """Get the state of any Home Assistant entity"""
     url = f"{HA_URL}/api/states/{entity_id}"
