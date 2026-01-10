@@ -26,27 +26,24 @@ LOCK_BTN_ID: str     = "GP18"
 #
 async def main():
  
-
   # Logger
   logger = get_logger()
   logger.set_level(Logger.INFO)
   logger.info("main","Start")
 
+  # Create HA Client
+  ha_client = HAClient(logger=logger,led_id=ID_CVR_LED_ID)
+
   # Startup
   util.startup(
      logger=logger,
+     ha_client=ha_client,
      cvr_open_led_id=CVR_OPEN_LED_ID,
      tracking_led_id=TRACKING_LED_ID,
      lock_led_id=LOCK_LED_ID,
      id_cvr_led_id=ID_CVR_LED_ID,
      od_cvr_led_id=OD_CVR_LED_ID
      )
-
-  # Connect to WiFi
-  ha = HAClient(logger=logger,led_id="GP14")
-  while not ha.connect_wifi():
-     logger.info("main","WiFi not connected!")
-  logger.info("main","WiFi connected!")
 
   # Scanner
   # DEVTODO I need to update the scanner accept a call-back function, the call back function is the same function that 

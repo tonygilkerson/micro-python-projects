@@ -1,3 +1,4 @@
 config.py
 .temp
 .DS_Store
+.envrc.private

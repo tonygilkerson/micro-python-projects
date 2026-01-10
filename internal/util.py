@@ -1,9 +1,11 @@
 import time
 from machine import Pin
+from internal.ha_api import HAClient
 from internal.logging import Logger
 
 def startup(
 		logger: Logger,
+    ha_client: HAClient,
 		cvr_open_led_id: str,
 		tracking_led_id: str,
 		lock_led_id: str,
@@ -52,6 +54,12 @@ def startup(
   od_cvr_led.on()
   time.sleep(1)
   od_cvr_led.off()
+
+
+  logger.info("startup","Connecting to WiFi...")
+  while not ha_client.connect_wifi():
+     logger.info("startup","WiFi not connected!")
+  logger.info("startup","WiFi connected!")
 
   # All off
   cvr_open_led.off()
