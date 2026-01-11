@@ -16,16 +16,16 @@ class Logger:
 	def set_level(self, level: int) -> None:
 		self.level = level
 
-	def debug(self, source, msg) -> None:
-		self._log(self.DEBUG, source, msg)
+	def debug(self, source, msg, end: str = "\n") -> None:
+		self._log(self.DEBUG, source, msg, end=end)
 
-	def info(self, source, msg) -> None:
-		self._log(self.INFO, source, msg)
+	def info(self, source, msg, end: str = "\n") -> None:
+		self._log(self.INFO, source, msg, end=end)
 
-	def error(self, source, msg) -> None:
-		self._log(self.ERROR, source, msg)
+	def error(self, source, msg, end: str = "\n") -> None:
+		self._log(self.ERROR, source, msg, end=end)
 
-	def _log(self, level: int, source, msg) -> None:
+	def _log(self, level: int, source, msg, end: str = "\n") -> None:
 		if level < self.level:
 			return
 
@@ -54,7 +54,7 @@ class Logger:
 
 		level_name = self._LEVEL_NAMES.get(level, str(level))
 		src = str(source)
-		print("[{}] {} {} - {}".format(ts, level_name, src, message))
+		print("[{}] {} {} - {}".format(ts, level_name, src, message), end=end)
 
 # DEVTODO I dont think i need a function to create the class instance
 def get_logger(level: int = Logger.INFO) -> Logger:

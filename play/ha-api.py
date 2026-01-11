@@ -13,7 +13,8 @@ import network
 import urequests
 import time
 from machine import Pin
-from config import WIFI_SSID, WIFI_PASSWORD, HA_URL, HA_TOKEN
+from config import WIFI_SSID, HA_URL
+from config_private import WIFI_PASSWORD, HA_TOKEN
 
 # ============================================
 # WiFi Connection

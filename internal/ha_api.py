@@ -4,7 +4,7 @@ import urequests
 import time
 from machine import Pin
 from internal.logging import Logger
-from config import WIFI_SSID, HA_URL
+from config import WIFI_SSID, HA_URL,GDO_RUN_ENTITY_ID
 from config_private import WIFI_PASSWORD, HA_TOKEN
 
 class HAClient:
@@ -66,7 +66,10 @@ class HAClient:
             self.logger.info("HAClient.get_state",f"✓ State: {data['state']}")
             self.logger.info("HAClient.get_state",f"  Attributes: {data.get('attributes', {})}")
             response.close()
-            return data, None
+            if data['state'] == "on":
+              return True, None
+            else:
+              return False, None
         else:
             err = Exception(f"HTTP {response.status_code}")
             self.logger.info("HAClient.get_state",f"✗ Error: {err}")
@@ -76,6 +79,38 @@ class HAClient:
     except Exception as e:
         self.logger.info("HAClient.get_state",f"✗ Exception: {e}")
         return None, e
+
+  def set_toggle_state(self, is_on: bool):
+      """Turn toggel entity on or off in Home Assistant"""
+      
+      headers = {
+          "Authorization": f"Bearer {HA_TOKEN}",
+          "Content-Type": "application/json"
+      }
+      payload = {"entity_id": GDO_RUN_ENTITY_ID}
+
+      if is_on:
+          self.logger.info("HAClient.set_toggle_state","🟢 ON Send turn_on to HA")
+          url = f"{HA_URL}/api/services/input_boolean/turn_on"
+      else:
+          self.logger.info("HAClient.set_toggle_state","🔴 OFF Send turn_off to HA")
+          url = f"{HA_URL}/api/services/input_boolean/turn_off"
+
+      try:
+          response = urequests.post(url, headers=headers, json=payload, timeout=5)
+          
+          if response.status_code == 200:
+              self.logger.info("HAClient.set_toggle_state",f"✅ Success!")
+              response.close()
+              return
+          else:
+              self.logger.info("HAClient.set_toggle_state",f"❌ Error: HTTP {response.status_code}")
+              response.close()
+              return
+              
+      except Exception as e:
+          self.logger.info("HAClient.set_toggle_state",f"❌ Exception: {e}")
+          return
 
   def send_notification(self,title, message):
       """Send a notification to the Home Assistant mobile app"""

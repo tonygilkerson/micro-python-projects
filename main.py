@@ -27,12 +27,16 @@ LOCK_BTN_ID: str     = "GP18"
 #
 async def main():
  
-  # Outs
+  # LEDs
   cvr_open_led = Pin(CVR_OPEN_LED_ID, Pin.OUT)
   tracking_led = Pin(TRACKING_LED_ID, Pin.OUT)
   lock_led = Pin(LOCK_LED_ID, Pin.OUT)
   run_led = Pin(RUN_LED_ID, Pin.OUT)
   od_cvr_led = Pin(OD_CVR_LED_ID, Pin.OUT)
+
+  # Buttons
+  od_cover_btn = Pin(OD_CVR_BTN_ID, Pin.IN, Pin.PULL_UP)
+  id_cover_btn = Pin(ID_CVR_BTN_ID, Pin.IN, Pin.PULL_UP)
 
   # Logger
   logger = get_logger()
@@ -68,13 +72,22 @@ async def main():
   logger.info("main","Create cover controller")
   cover = CoverCtl(
      logger=logger,
-     cover_btn_id=OD_CVR_BTN_ID,
-     cover_led_id=OD_CVR_LED_ID,
-     scanner=scanner)
+     ha_client=ha_client,
+     scanner=scanner,
+     od_cover_btn=od_cover_btn,
+     od_cover_led=od_cvr_led,
+     id_cover_btn=id_cover_btn,
+     cvr_open_led=cvr_open_led)
   
   # Run forever
   while True:
-      logger.debug("main",".")
+      logger.debug("main",".",end="")
+      util.status(logger=logger,
+                  cvr_open_led=cvr_open_led,
+                  tracking_led=tracking_led,
+                  lock_led=lock_led,
+                  run_led=run_led,
+                  od_cvr_led=od_cvr_led)
       await asyncio.sleep_ms(1000)
 
 def temp_handler():

@@ -4,6 +4,55 @@ from internal.ha_api import HAClient
 from internal.logging import Logger
 from config import GDO_RUN_ENTITY_ID
 
+def status(logger: Logger,
+           cvr_open_led: Pin,
+           tracking_led: Pin,
+           lock_led: Pin,
+           run_led: Pin,
+           od_cvr_led: Pin) -> None:
+
+  logger.debug("util.status",f"cvr_open_led: {cvr_open_led.value()}")
+  logger.debug("util.status",f"tracking_led: {tracking_led.value()}")
+  logger.debug("util.status",f"lock_led: {lock_led.value()}")
+  logger.debug("util.status",f"run_led: {run_led.value()}")
+  logger.debug("util.status",f"od_cvr_led: {od_cvr_led.value()}")
+  logger.debug("util.status","---------------------------------------------------")
+
+def wink(led: Pin) -> None:
+  led.on()
+  time.sleep(0.2)
+  led.off()
+
+def connect_wifi(ha_client: HAClient, led: Pin, pwm: PWM) -> None:
+
+  # Try to connect
+  if ha_client.connect_wifi():
+    pwm.deinit()
+    led.off()
+  else:
+    raise Exception("Unable to connect to WiFi!") 
+
+def connect_ha(ha_client: HAClient, led: Pin, pwm: PWM) -> None:
+
+  data, err = ha_client.get_state(entity_id=GDO_RUN_ENTITY_ID)
+  if data:
+    pwm.deinit()
+    led.off()
+  else:
+    raise Exception(f"Unable to connect to HA entity: {GDO_RUN_ENTITY_ID} error: {err}")
+
+def stop_pwm(pwm: PWM, pin: Pin) -> None:
+  # Best-effort: deinit PWM, reconfigure pin as output and drive it low
+  try:
+    pwm.deinit()
+  except Exception:
+    pass
+  try:
+    pin.init(Pin.OUT)
+  except Exception:
+    pass
+  pin.off()
+
 def startup(
 		logger: Logger,
     ha_client: HAClient,
@@ -37,11 +86,26 @@ def startup(
   logger.info("startup","Outdoor Cover LED")
   wink(od_cvr_led)
 
+  logger.info("startup","Connecting to WiFi...")
+  pwm1 = PWM(od_cvr_led)
+  pwm1.init(freq=10,duty_u16=32768) # ~50% duty (0..65535)
+  connect_wifi(ha_client, od_cvr_led, pwm1)
+  logger.info("startup","Connected to WiFi...")
+
   logger.info("startup","Connecting to HA...")
-  connect(ha_client, run_led)
+  pwm2 = PWM(run_led)
+  pwm2.init(freq=10,duty_u16=32768) # ~50% duty (0..65535)
+  connect_ha(ha_client, run_led, pwm2)
   logger.info("startup","Connected to HA!")
 
+  # Ensure PWMs are stopped and pins driven low
+  logger.info("startup","Turn off od_cvr_led")
+  stop_pwm(pwm1, od_cvr_led)
+  logger.info("startup","Turn off run_led")
+  stop_pwm(pwm2, run_led)
+
   # All off
+  logger.info("startup","🧨 ALL Off")
   cvr_open_led.off()
   tracking_led.off()
   lock_led.off()
@@ -50,34 +114,3 @@ def startup(
 
   logger.info("startup","🎉 Startup complete")
   return True
-
-def wink(led: Pin) -> None:
-  led.on()
-  time.sleep(0.2)
-  led.off()
-
-def connect(ha_client: HAClient, led: Pin) -> None:
-
-  # Start off with blinking led
-  led.off() # Set initial condition 
-  pwm = PWM(led)
-  pwm.init(freq=10,duty_u16=32768) # ~50% duty (0..65535)
-
-  # Try to connect
-  if ha_client.connect_wifi():
-    pwm.deinit()
-    led.off()
-  else:
-    raise Exception("Unable to connect to WiFi!") 
-
-  # Show a slight pause in the blink before we continue
-  pwm.deinit()
-  led.off()
-  time.sleep(1)
-
-  data, err = ha_client.get_state(entity_id=GDO_RUN_ENTITY_ID)
-  if data:
-    pwm.deinit()
-    led.off()
-  else:
-    raise Exception(f"Unable to connect to HA entity: {GDO_RUN_ENTITY_ID}")
