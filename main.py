@@ -37,6 +37,7 @@ async def main():
   # Buttons
   od_cover_btn = Pin(OD_CVR_BTN_ID, Pin.IN, Pin.PULL_UP)
   id_cover_btn = Pin(ID_CVR_BTN_ID, Pin.IN, Pin.PULL_UP)
+  lock_btn = Pin(LOCK_BTN_ID, Pin.IN, Pin.PULL_UP)
 
   # Logger
   logger = get_logger()
@@ -77,6 +78,9 @@ async def main():
      od_cover_btn=od_cover_btn,
      od_cover_led=od_cvr_led,
      id_cover_btn=id_cover_btn,
+     lock_btn=lock_btn,
+     lock_led=lock_led,
+     run_led=run_led,
      cvr_open_led=cvr_open_led)
   
   # Run forever

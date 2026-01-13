@@ -56,7 +56,7 @@ class HAClient:
     
     try:
         self.logger.info("HAClient.get_state",f"📡 Getting state of: {entity_id}")
-        response = urequests.get(url, headers=headers, timeout=5)
+        response = urequests.get(url, headers=headers, timeout=10)
         
         # Print raw response body
         self.logger.debug("HAClient.get_state",f"Raw Response Body: {response.text}")

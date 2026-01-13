@@ -24,10 +24,14 @@ class CoverCtl:
     od_cover_btn: Pin
     od_cover_led: Pin
     id_cover_btn: Pin
+    lock_btn: Pin
+    lock_led: Pin
+    run_led: Pin
     cvr_open_led: Pin
     scanner: BLEScanner
-    od_od_cover_btn_last_press_ms: int
-
+    od_cover_btn_last_press_ms: int
+    in_cover_btn_last_press_ms: int
+    lock_btn_last_press_ms: int
 
     def __init__(self,
                  logger: Logger,
@@ -36,6 +40,9 @@ class CoverCtl:
                  od_cover_btn: Pin,
                  od_cover_led: Pin,
                  id_cover_btn: Pin,
+                 lock_btn: Pin,
+                 lock_led: Pin,
+                 run_led: Pin,
                  cvr_open_led: Pin,
                  ) -> None:
         """
@@ -53,6 +60,8 @@ class CoverCtl:
 
         # Locked by default
         self.is_locked = True
+        self.lock_led = lock_led
+        self.lock_led.on()
 
         # Scanner
         self.scanner = scanner
@@ -64,6 +73,10 @@ class CoverCtl:
         self.od_cover_led = od_cover_led
         self.od_cover_led.off()
 
+        # Run LED
+        self.run_led = run_led
+        self.run_led.on()
+
         # Outdoor Cover Button
         self.od_cover_btn = od_cover_btn
         self.od_cover_btn_last_press_ms = 0
@@ -74,10 +87,58 @@ class CoverCtl:
         self.id_cover_btn_last_press_ms = 0
         self.id_cover_btn.irq(handler=self.id_cover_btn_irq, trigger=Pin.IRQ_FALLING)
 
+        # Lock Button
+        self.lock_btn = lock_btn
+        self.lock_btn_last_press_ms = 0
+        self.lock_btn.irq(handler=self.lock_btn_irq, trigger=Pin.IRQ_FALLING)
+
+
+    def lock_btn_irq(self, pin):
+        """IRQ-safe handler: schedule main-context work"""
+        # pass small int (pin id) to scheduled handler
+        micropython.schedule(self.lock_btn_handler, "LOCK_BTN")
+
+    def lock_btn_handler(self, arg):
+        """Outdoor Cover Button Handler. Runs when the lock button is pressed
+        Runs in main context via micropython.schedule"""
+        now = time.ticks_ms()
+        # simple debounce: ignore presses within 500ms
+        if time.ticks_diff(now, self.lock_btn_last_press_ms) < 500:
+            return
+        self.lock_btn_last_press_ms = now
+
+        self.logger.info("CoverCtl.lock_btn_handler",f"👉 PRESS lock button pressed")
+
+        if self.is_locked:
+            self.logger.info("CoverCtl.lock_btn_handler","🕹️ TOGGLE set is_locked=False")
+            self.is_locked = False
+            self.lock_led.off()
+        else:
+            self.logger.info("CoverCtl.lock_btn_handler","🕹️ TOGGLE set is_locked=True")
+            self.is_locked = True
+            self.lock_led.on()
+             
     def od_cover_btn_irq(self, pin):
         """IRQ-safe handler: schedule main-context work"""
         # pass small int (pin id) to scheduled handler
         micropython.schedule(self.od_cover_btn_handler, "OD_COVER_BTN")
+
+    def od_cover_btn_handler(self, arg):
+        """Outdoor Cover Button Handler. Runs when the outdoor cover button is pressed
+        Runs in main context via micropython.schedule"""
+        now = time.ticks_ms()
+        # simple debounce: ignore presses within 500ms
+        if time.ticks_diff(now, self.od_cover_btn_last_press_ms) < 500:
+            return
+        self.od_cover_btn_last_press_ms = now
+
+        self.logger.info("CoverCtl.od_cover_btn_handler",f"👉 PRESS outdoor cover button pressed")
+
+        if self.is_locked:
+            self.logger.info("CoverCtl.od_cover_btn_handler","🔒 LOCKED outdoor cover is not enabled when door is locked")
+        else:
+            self.logger.info("CoverCtl.od_cover_btn_handler","🕹️ TOGGLE outdoor cover")
+            self.toggle_cover()
 
     def id_cover_btn_irq(self, pin):
         """IRQ-safe handler: schedule main-context work"""
@@ -88,8 +149,8 @@ class CoverCtl:
         """Indoor Cover Button Handler. Runs when the indoor cover button is pressed
         Runs in main context via micropython.schedule"""
         now = time.ticks_ms()
-        # simple debounce: ignore presses within 300ms
-        if time.ticks_diff(now, self.id_cover_btn_last_press_ms) < 300:
+        # simple debounce: ignore presses within 500ms
+        if time.ticks_diff(now, self.id_cover_btn_last_press_ms) < 500:
             return
         self.od_cover_btn_last_press_ms = now
 
@@ -97,22 +158,6 @@ class CoverCtl:
         self.logger.info("CoverCtl.od_cover_btn_handler","🕹️ TOGGLE indoor cover")
         self.toggle_cover() 
         
-    def od_cover_btn_handler(self, arg):
-        """Outdoor Cover Button Handler. Runs when the outdoor cover button is pressed
-        Runs in main context via micropython.schedule"""
-        now = time.ticks_ms()
-        # simple debounce: ignore presses within 300ms
-        if time.ticks_diff(now, self.od_cover_btn_last_press_ms) < 300:
-            return
-        self.od_cover_btn_last_press_ms = now
-
-        self.logger.info("CoverCtl.od_cover_btn_handler",f"👉 PRESS outdoor cover button pressed")
-
-        if self.is_locked:
-            self.logger.info("CoverCtl.od_cover_btn_handler","🔒 LOCKED outdoor cover is not enabled when door is locked")
-        else:
-            self.logger.info("CoverCtl.od_cover_btn_handler","🕹️ TOGGLE outdoor cover")
-            self.toggle_cover() 
 
     def toggle_cover(self)->None:
         self.logger.info("CoverCtl.toggle_cover","Get state of entity_id: {GDO_RUN_ENTITY_ID}")

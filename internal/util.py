@@ -23,7 +23,10 @@ def wink(led: Pin) -> None:
   time.sleep(0.2)
   led.off()
 
-def connect_wifi(ha_client: HAClient, led: Pin, pwm: PWM) -> None:
+def connect_wifi(
+    ha_client: HAClient, 
+    led: Pin, 
+    pwm: PWM) -> None:
 
   # Try to connect
   if ha_client.connect_wifi():
@@ -35,11 +38,13 @@ def connect_wifi(ha_client: HAClient, led: Pin, pwm: PWM) -> None:
 def connect_ha(ha_client: HAClient, led: Pin, pwm: PWM) -> None:
 
   data, err = ha_client.get_state(entity_id=GDO_RUN_ENTITY_ID)
-  if data:
+  
+
+  if err is not None:
+    raise Exception(f"Unable to connect to HA entity: {GDO_RUN_ENTITY_ID} error: {err}")
+  else:
     pwm.deinit()
     led.off()
-  else:
-    raise Exception(f"Unable to connect to HA entity: {GDO_RUN_ENTITY_ID} error: {err}")
 
 def stop_pwm(pwm: PWM, pin: Pin) -> None:
   # Best-effort: deinit PWM, reconfigure pin as output and drive it low

@@ -15,8 +15,14 @@ _IRQ_SCAN_RESULT = const(5)  # Event triggered when a BLE device is found during
 _IRQ_SCAN_DONE = const(6)    # Event triggered when scanning stops
 
 # Signal Strength and Timing Thresholds
+# Typical RSSI quick-reference (approximate, environment dependent):
+
+# = -40 dBm: very close (arm's reach)
+# -50 to -60 dBm: close (a few meters, reliable presence)
+# -70 dBm: medium distance
+# <= -80 to -90 dBm: far / weak
 # VERY_CLOSE_RSSI = const(-45)  # RSSI threshold to filter close devices
-VERY_CLOSE_RSSI = const(-35)  # RSSI threshold to filter close devices
+VERY_CLOSE_RSSI = const(-30)  # RSSI threshold to filter close devices
 TIMEOUT_MS = const(5000)      # Time (ms) before assuming target device is out of range
 
 
