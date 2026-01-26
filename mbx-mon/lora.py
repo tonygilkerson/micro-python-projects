@@ -62,7 +62,7 @@ class LoRa:
         self.set_bandwidth(kw.get('bandwidth', 250000))
         self.set_spreading_factor(kw.get('spreading_factor', 10))
         self.set_coding_rate(kw.get('coding_rate', 5))
-        self.set_preamble_length(kw.get('preamble_length', 4))
+        self.set_preamble_length(kw.get('preamble_length', 8))
         self.set_crc(kw.get('crc', False))
         # set LNA boost
         self._write(REG_LNA, self._read(REG_LNA) | 0x03)
