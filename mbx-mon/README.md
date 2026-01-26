@@ -1,27 +1,16 @@
-# Garage Door Controller
+# Mailbox Monitor
 
-A garage door controller
+Monitor the status of the mailbox and send status to HA via LoRa.
 
 ## Initial Setup
 
 To initialize the project:
 
 * clone parent project `micro-python-projects`
-* open this sub-dir as a VSCode project `code garage-door-controller`
+* open this sub-dir as a VSCode project `mail-mon`
 * right-click at the root in the vs code explorer
 * open the command palette (shift+apple+p) search for  **Initialize MicroPico Project**
 * This will add
   * `.vscode` folder
   * `.micropico` file
 * Remove `visualstudioexptteam.vscodeintellicode` from the `.vscode/extensions.json` file just created.  It is no longer supported.
-
-## Deploy
-
-```sh
-#mpremote fs cp main.py :main.py
-mpremote fs mkdir /internal
-mpremote fs cp config.py :config.py
-mpremote fs cp internal/bluetooth_scanner.py :internal/bluetooth_scanner.py
-mpremote fs cp internal/__init__.py :/internal/__init__.py
-mpremote reset
-```
