@@ -14,7 +14,12 @@ To initialize the project:
   * `.vscode` folder
   * `.micropico` file
 * Remove `visualstudioexptteam.vscodeintellicode` from the `.vscode/extensions.json` file just created.  It is no longer supported.
+* Shared files
 
+```sh
+cd internal
+ln -s ../../shared/logging.py logging.py
+```
 ## Deploy
 
 ```sh

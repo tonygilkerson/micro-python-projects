@@ -18,5 +18,4 @@ To initialize the project:
 
 ```sh
 ln -s ../shared/lora.py lora.py
-ln -s ../shared/logging.py logging.py
 ```
