@@ -1,7 +1,5 @@
 """
-LoRa Ping Sender for Raspberry Pi Pico
-Sends "ping" message every 10 seconds using RFM95W
-Waits for ACK and blinks Green LED (GP12) on success or Red LED (GP13) on timeout
+Mailbox Moitor, uses LoRa to send mailbox status
 Uses wybiral/micropython-lora library (https://github.com/wybiral/micropython-lora)
 Copy https://github.com/wybiral/micropython-lora/lora.py to lora.py
 """
@@ -17,15 +15,15 @@ logger = get_logger()
 logger.set_level(Logger.INFO)
 logger.info("global","Start")
 
-# Pin definitions (matching your wiring)
+# LoRa PINs
 LORA_EN = 15
 LORA_MISO = 16
 LORA_CS = 17
 LORA_SCK = 18
 LORA_MOSI = 19
 LORA_RST = 20
-LORA_G0 = 21  # DIO0 / RX pin
-LORA_G1 = 22
+LORA_G0 = 21  # RX pin
+LORA_G1 = 22  # Is this used?
 
 # Configure pins
 en = Pin(LORA_EN, Pin.OUT, value=1)
@@ -41,7 +39,6 @@ led_green = Pin(13, Pin.OUT)
 # Reset
 rst.value(0); time.sleep(0.1)
 rst.value(1); time.sleep(0.1)
-
 
 # Configure SPI bus
 logger.info("global","Configure SPI bus")

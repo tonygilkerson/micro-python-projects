@@ -2,7 +2,6 @@ import asyncio
 import micropython
 import time
 from machine import Pin
-from internal.bluetooth_scanner import BLEScanner
 from internal.logging import Logger
 from internal.ha_api import HAClient
 from config import GDO_RUN_ENTITY_ID
@@ -28,7 +27,6 @@ class CoverCtl:
     lock_led: Pin
     run_led: Pin
     cvr_open_led: Pin
-    scanner: BLEScanner
     od_cover_btn_last_press_ms: int
     in_cover_btn_last_press_ms: int
     lock_btn_last_press_ms: int
@@ -36,7 +34,6 @@ class CoverCtl:
     def __init__(self,
                  logger: Logger,
                  ha_client: HAClient,
-                 scanner: BLEScanner,
                  od_cover_btn: Pin,
                  od_cover_led: Pin,
                  id_cover_btn: Pin,
@@ -47,9 +44,6 @@ class CoverCtl:
                  ) -> None:
         """
         Initializes the cover controller
-
-        Args:
-            TODO
         """
         # Logger
         self.logger = logger
@@ -62,9 +56,6 @@ class CoverCtl:
         self.is_locked = True
         self.lock_led = lock_led
         self.lock_led.on()
-
-        # Scanner
-        self.scanner = scanner
 
         # Cover Open indicator (used during development)
         self.cvr_open_led = cvr_open_led

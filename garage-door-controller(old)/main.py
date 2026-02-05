@@ -2,7 +2,6 @@ import asyncio
 import machine
 import time
 from machine import Pin
-from internal.bluetooth_scanner import BLEScanner
 from internal.logging import get_logger, Logger
 from internal.cover_ctl import CoverCtl
 from internal.ha_api import HAClient
@@ -13,7 +12,7 @@ import internal.util as util
 # Pins
 #
 CVR_OPEN_LED_ID: str = "GP11"
-TRACKING_LED_ID: str = "GP12"
+TRACKING_LED_ID: str = "GP12" # DEVTODO - remove
 LOCK_LED_ID: str     = "GP13"
 RUN_LED_ID: str      = "GP14"
 OD_CVR_LED_ID: str   = "GP15"
@@ -58,23 +57,11 @@ async def main():
      od_cvr_led=od_cvr_led
      )
 
-  # Scanner
-  # DEVTODO I need to update the scanner accept a call-back function, the call back function is the same function that 
-  #         is called when you press the od_cover_button.
-  logger.info("main","Create scanner")
-  scanner = BLEScanner(
-     logger=logger,
-     tracking_handler=temp_handler,
-     mode="track",
-     led_id=TRACKING_LED_ID)
-  asyncio.create_task(scanner.run())
-
   # Cover Control
   logger.info("main","Create cover controller")
   cover = CoverCtl(
      logger=logger,
      ha_client=ha_client,
-     scanner=scanner,
      od_cover_btn=od_cover_btn,
      od_cover_led=od_cvr_led,
      id_cover_btn=id_cover_btn,
